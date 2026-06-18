@@ -196,16 +196,42 @@ button[kind="primary"]:hover, .stButton > button:hover {
 # ── Helpers ───────────────────────────────────────────────────────────────
 
 def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extract all text from a PDF file using pdfplumber."""
+    """
+    Extract text from a PDF.
+    - First tries pdfplumber (fast, works for text-based PDFs).
+    - If result is too short (<150 chars), falls back to OCR via pdf2image + pytesseract.
+    """
     import pdfplumber
 
+    # ── Pass 1: pdfplumber ──────────────────────────────────────────────────
     text_parts = []
     with pdfplumber.open(io.BytesIO(file_bytes)) as pdf:
         for page in pdf.pages:
             t = page.extract_text()
             if t:
                 text_parts.append(t)
-    return "\n\n".join(text_parts)
+    native_text = "\n\n".join(text_parts).strip()
+
+    if len(native_text) >= 150:
+        return native_text  # Good enough — use it
+
+    # ── Pass 2: OCR fallback ────────────────────────────────────────────────
+    try:
+        import pytesseract
+        from pdf2image import convert_from_bytes
+        from PIL import Image
+
+        st.info("📷 Image-based PDF detected — running OCR (may take 20–40 sec)…", icon="🔍")
+        images = convert_from_bytes(file_bytes, dpi=200)
+        ocr_parts = []
+        for img in images:
+            text = pytesseract.image_to_string(img, lang="eng")
+            if text.strip():
+                ocr_parts.append(text.strip())
+        return "\n\n".join(ocr_parts)
+    except Exception as e:
+        # If OCR fails for any reason, return whatever native text we got
+        return native_text
 
 
 def bar_color(score: int) -> str:
@@ -432,7 +458,7 @@ def main():
                 return
 
         if not pitch_text.strip():
-            st.error("The PDF appears to be image-only or has no extractable text. Please use a text-based PDF.")
+            st.error("Could not extract any text from this PDF, even with OCR. Try a different file.")
             return
 
         progress = st.progress(0, text="Analyzing with DeepSeek…")
@@ -497,37 +523,4 @@ def main():
     # Footer
     st.markdown(
         """
-        <div style="text-align:center;margin-top:3rem;color:#334155;font-size:0.78rem;">
-            PitchScan · Built for World Product Day Hackathon 2026 · Powered by DeepSeek AI
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-def _render_sample_metrics():
-    """Show placeholder stats on the empty state."""
-    st.markdown("<br>", unsafe_allow_html=True)
-    c1, c2, c3, c4 = st.columns(4)
-    metrics = [
-        ("🎯", "VC Score", "0–100"),
-        ("🚩", "Red Flags", "Detected"),
-        ("🔍", "Comparables", "3 Companies"),
-        ("💡", "Suggestions", "5 Actions"),
-    ]
-    for col, (icon, label, val) in zip([c1, c2, c3, c4], metrics):
-        col.markdown(
-            f"""
-            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);
-                        border-radius:10px;padding:1rem;text-align:center;">
-                <div style="font-size:1.6rem;">{icon}</div>
-                <div style="color:#94a3b8;font-size:0.78rem;margin-top:0.3rem;">{label}</div>
-                <div style="color:#e2e8f0;font-weight:600;margin-top:0.1rem;">{val}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-if __name__ == "__main__":
-    main()
+        <div style="text-align:center;mar
