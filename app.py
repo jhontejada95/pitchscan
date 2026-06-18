@@ -264,18 +264,57 @@ def make_tips_js():
 
 
 def render_loading_tips():
+    import streamlit.components.v1 as _c
+    tips_json = json.dumps([[t[0], t[1]] for t in VC_TIPS])
     first = VC_TIPS[0]
-    html = (
-        '<div class="ps-tips-box">'
-        '<div class="ps-tips-source" id="ps-tip-src">' + first[0] + '</div>'
-        '<div class="ps-tips-text" id="ps-tip-txt">“' + first[1] + '”</div>'
-        '<div class="ps-tips-counter" id="ps-tip-cnt">1 / ' + str(len(VC_TIPS)) + '</div>'
-        '</div>'
-        + make_tips_js()
-    )
-    st.markdown(html, unsafe_allow_html=True)
-
-
+    _c.html("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&family=DM+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:transparent;font-family:'Plus Jakarta Sans',sans-serif;}
+.tips-box{background:#0c1e2e;border:1px solid rgba(126,207,200,0.12);border-radius:16px;padding:3px;margin:2px 0;}
+.tips-inner{background:rgba(12,42,56,0.85);border-radius:14px;padding:1.1rem 1.4rem 1.8rem;min-height:72px;position:relative;}
+.tips-source{font-size:0.58rem;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:#7ECFC8;margin-bottom:0.4rem;transition:opacity 0.4s ease;}
+.tips-text{color:#5a7a82;font-size:0.8rem;line-height:1.6;font-style:italic;transition:opacity 0.4s ease;}
+.tips-counter{position:absolute;bottom:0.5rem;right:1rem;font-size:0.58rem;color:#2a4050;font-family:'DM Mono',monospace;}
+.tips-dots{position:absolute;bottom:0.6rem;left:1.2rem;display:flex;gap:5px;align-items:center;}
+.dot{width:4px;height:4px;border-radius:50%;background:rgba(126,207,200,0.2);transition:background 0.3s,transform 0.3s;cursor:pointer;}
+.dot.active{background:#7ECFC8;transform:scale(1.4);}
+</style>
+<div class="tips-box"><div class="tips-inner">
+  <div class="tips-source" id="ts"></div>
+  <div class="tips-text" id="tt"></div>
+  <div class="tips-dots" id="td"></div>
+  <div class="tips-counter" id="tc"></div>
+</div></div>
+<script>
+var tips=__TIPS__;
+var i=0,total=tips.length;
+var td=document.getElementById('td');
+for(var d=0;d<total;d++){
+  var dot=document.createElement('span');
+  dot.className='dot'+(d===0?' active':'');
+  dot.setAttribute('data-i',d);
+  (function(idx){dot.onclick=function(){go(idx);clearInterval(timer);timer=setInterval(next,10000);};})(d);
+  td.appendChild(dot);
+}
+function go(idx){
+  i=idx;
+  var s=document.getElementById('ts'),t=document.getElementById('tt'),c=document.getElementById('tc');
+  s.style.opacity=0;t.style.opacity=0;
+  setTimeout(function(){
+    s.textContent=tips[i][0];
+    t.textContent='"'+tips[i][1]+'"';
+    c.textContent=(i+1)+' / '+total;
+    td.querySelectorAll('.dot').forEach(function(d,j){d.className='dot'+(j===i?' active':'');});
+    s.style.opacity=1;t.style.opacity=1;
+  },350);
+}
+function next(){go((i+1)%total);}
+go(0);
+var timer=setInterval(next,10000);
+</script>
+""".replace('__TIPS__', tips_json), height=118, scrolling=False)
 def extract_text_from_pdf(file_bytes: bytes) -> str:
     import pdfplumber
     text_parts = []
