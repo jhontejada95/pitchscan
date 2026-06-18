@@ -568,7 +568,8 @@ def main():
         layout="wide",
         initial_sidebar_state="collapsed",
     )
-    st.markdown(f"""
+    import streamlit.components.v1 as _components
+    _components.html(f"""
 <script>
 (function(n,o,v,u,s,ai){{
   if(n[s])return;n[s]=Object.assign(n[s]||{{}},{{initialize:function(opts){{n[s].q=(n[s].q||[]).concat([["initialize",opts]]);}} }});
@@ -577,7 +578,7 @@ def main():
   ai.src='https://cdn.novus.pendo.io/agent/static/{NOVUS_APP_ID}/novus.js';
   o.head.appendChild(ai);
 }})(window,document,'novus','novus','novus');
-</script>""", unsafe_allow_html=True)
+</script>""", height=0, scrolling=False)
 
     st.markdown(CSS, unsafe_allow_html=True)
 
