@@ -7,27 +7,55 @@ import os
 from openai import OpenAI
 
 
-# ── Deck counter (persists in /tmp file) ──────────────────────────
+# ── Deck counter + daily free cap ─────────────────────────────────
 _COUNT_FILE = "/tmp/pitchscan_count.json"
-_COUNT_SEED = 47  # make it look like we've been running
+_COUNT_SEED = 47
+_DAILY_FREE_LIMIT = 20
 
-def get_deck_count() -> int:
+def _load_data() -> dict:
     try:
         if os.path.exists(_COUNT_FILE):
             with open(_COUNT_FILE) as f:
-                return json.load(f).get("count", _COUNT_SEED)
+                return json.load(f)
     except Exception:
         pass
-    return _COUNT_SEED
+    return {}
 
-def increment_deck_count() -> int:
-    count = get_deck_count() + 1
+def _save_data(data: dict):
     try:
         with open(_COUNT_FILE, "w") as f:
-            json.dump({"count": count}, f)
+            json.dump(data, f)
     except Exception:
         pass
-    return count
+
+def get_deck_count() -> int:
+    return _load_data().get("count", _COUNT_SEED)
+
+def get_daily_used() -> int:
+    import datetime
+    data = _load_data()
+    today = datetime.date.today().isoformat()
+    if data.get("day") != today:
+        return 0
+    return data.get("day_count", 0)
+
+def increment_deck_count() -> int:
+    import datetime
+    data = _load_data()
+    today = datetime.date.today().isoformat()
+    if data.get("day") != today:
+        data["day"] = today
+        data["day_count"] = 0
+    data["day_count"] = data.get("day_count", 0) + 1
+    data["count"] = data.get("count", _COUNT_SEED) + 1
+    _save_data(data)
+    return data["count"]
+
+def daily_cap_reached() -> bool:
+    return get_daily_used() >= _DAILY_FREE_LIMIT
+
+def daily_remaining() -> int:
+    return max(0, _DAILY_FREE_LIMIT - get_daily_used())
 
 st.set_page_config(
     page_title="PitchScan – VC-Grade Pitch Analysis",
@@ -671,6 +699,14 @@ function vote(v){
         st.rerun()
 
 
+def _is_builtin_key(key: str) -> bool:
+    """True when the key came from st.secrets (not user-entered)."""
+    try:
+        return key == st.secrets.get("DEEPSEEK_API_KEY", "")
+    except Exception:
+        return False
+
+
 def main():
     import streamlit.components.v1 as _components
     _components.html(f"""
@@ -699,22 +735,38 @@ pendo.initialize({ visitor: { id: '' } });
     st.markdown(CSS, unsafe_allow_html=True)
 
     # Sidebar: API key
-    api_key = None
+    _has_builtin = False
     try:
-        api_key = st.secrets["DEEPSEEK_API_KEY"]
+        _secret = st.secrets.get("DEEPSEEK_API_KEY", "")
+        if _secret:
+            api_key = _secret
+            _has_builtin = True
     except Exception:
         pass
-    if not api_key:
-        with st.sidebar:
-            st.markdown("### API Key")
-            api_key = st.text_input("DeepSeek API Key", type="password", placeholder="sk-...")
+
+    with st.sidebar:
+        st.markdown("### API Key")
+        _user_key = st.text_input("Your DeepSeek API key (optional)", type="password", placeholder="sk-...")
+        if _user_key:
+            api_key = _user_key
+        if _has_builtin and not _user_key:
+            _rem = daily_remaining()
+            st.caption(f"Using shared key · **{_rem} free analyses left today**")
+            st.caption("[Get your own free key →](https://platform.deepseek.com)")
+        else:
             st.caption("Used only in this session.")
 
     # Hero with counter
     _deck_count = get_deck_count()
+    _remaining = daily_remaining()
+    _using_own_key = bool(api_key and not _is_builtin_key(api_key))
+    if _using_own_key:
+        _badge_extra = "Your API key · Unlimited"
+    else:
+        _badge_extra = f"{_remaining} free analyses left today"
     st.markdown(
         f'<div class="ps-hero">'
-        f'<div class="ps-hero-badge"><span class="ps-hero-dot"></span>AI-Powered VC Analysis &nbsp;·&nbsp; {_deck_count} decks analyzed</div>'
+        f'<div class="ps-hero-badge"><span class="ps-hero-dot"></span>AI-Powered VC Analysis &nbsp;·&nbsp; {_deck_count} decks analyzed &nbsp;·&nbsp; {_badge_extra}</div>'
         f'<h1>Know if your pitch will<br><span>get funded</span></h1>'
         f'<p>Upload your pitch deck and get an instant, brutally honest VC-grade review — '
         f'score, red flags, comparable companies, and concrete improvements.</p>'
@@ -800,6 +852,23 @@ pendo.initialize({ visitor: { id: '' } });
 
     if not api_key:
         st.warning("Add your DeepSeek API key in the sidebar to run the analysis.")
+        return
+
+    # Daily cap check (only applies when using built-in key)
+    _builtin = _is_builtin_key(api_key)
+    if _builtin and daily_cap_reached():
+        st.markdown(
+            '<div style="background:rgba(232,186,74,0.08);border:1px solid rgba(232,186,74,0.25);'
+            'border-radius:12px;padding:1.2rem 1.4rem;margin:1rem 0;">' 
+            '<div style="color:#E8BA4A;font-weight:700;margin-bottom:0.4rem;">'
+            '⏳ Free daily quota reached (20 analyses/day)</div>'
+            '<div style="color:#5a7a82;font-size:0.85rem;line-height:1.6;">'
+            'Add your own <a href="https://platform.deepseek.com" target="_blank" '
+            'style="color:#7ECFC8;">DeepSeek API key</a> in the sidebar to keep going — '
+            'it&#39;s free to sign up and costs ~$0.004 per analysis. '
+            'Or check back tomorrow when the quota resets.</div></div>',
+            unsafe_allow_html=True,
+        )
         return
 
     cache_key = uploaded_file.name + str(uploaded_file.size) + json.dumps(survey_context, sort_keys=True)
