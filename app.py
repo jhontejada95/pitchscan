@@ -5,7 +5,14 @@ import io
 import random
 from openai import OpenAI
 
-NOVUS_APP_ID = "26e1d6da-25ad-4964-981b-411e2faef7b0"
+st.set_page_config(
+    page_title="PitchScan – VC-Grade Pitch Analysis",
+    page_icon="🎯",
+    layout="wide",
+    initial_sidebar_state="collapsed",
+)
+
+NOVUS_APP_ID = "f2950f7e-4ee3-4154-81f4-c3f25610a0fc"
 
 VC_TIPS = [
     ("Paul Graham (YC)", "The best decks tell a story, not a business plan. Lead with a specific customer who has a painful problem."),
@@ -562,12 +569,6 @@ def render_results(result: dict, filename: str):
 
 
 def main():
-    st.set_page_config(
-        page_title="PitchScan – VC-Grade Pitch Analysis",
-        page_icon="🎯",
-        layout="wide",
-        initial_sidebar_state="collapsed",
-    )
     import streamlit.components.v1 as _components
     _components.html(f"""
 <script>
@@ -578,7 +579,7 @@ def main():
   ai.src='https://cdn.novus.pendo.io/agent/static/{NOVUS_APP_ID}/novus.js';
   o.head.appendChild(ai);
 }})(window,document,'novus','novus','novus');
-</script>""", height=0, scrolling=False)
+</script>""", height=1, scrolling=False)
     _components.html("""
 <script>
 (function(apiKey){
@@ -588,12 +589,7 @@ def main():
     y=e.createElement(n);y.async=!0;y.src='https://cdn.pendo.io/agent/static/'+apiKey+'/pendo.js';
     z=e.getElementsByTagName(n)[0];z.parentNode.insertBefore(y,z);})(window,document,'script','pendo');
 })('f2950f7e-4ee3-4154-81f4-c3f25610a0fc');
-
-pendo.initialize({
-  visitor: {
-    id: ''
-  }
-});
+pendo.initialize({ visitor: { id: '' } });
 </script>
 """, height=0, scrolling=False)
 
