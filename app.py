@@ -5,13 +5,6 @@ import io
 import random
 from openai import OpenAI
 
-st.set_page_config(
-    page_title="PitchScan - VC-Grade Pitch Analysis",
-    page_icon="PS",
-    layout="wide",
-    initial_sidebar_state="collapsed",
-)
-
 NOVUS_APP_ID = "26e1d6da-25ad-4964-981b-411e2faef7b0"
 
 VC_TIPS = [
@@ -343,7 +336,7 @@ def analyze_pitch(pdf_text: str, api_key: str) -> dict:
 
 
 def bar_color(s):
-    return "#10b981" if s >= 70 else ("#f59e0b" if s >= 45 else "#ef4444")
+    return "#7ECFC8" if s >= 70 else ("#2A6B55" if s >= 45 else "#E09590")
 
 
 def make_gauge_svg(score: int) -> str:
@@ -569,6 +562,12 @@ def render_results(result: dict, filename: str):
 
 
 def main():
+    st.set_page_config(
+        page_title="PitchScan – VC-Grade Pitch Analysis",
+        page_icon="🎯",
+        layout="wide",
+        initial_sidebar_state="collapsed",
+    )
     st.markdown(f"""
 <script>
 (function(n,o,v,u,s,ai){{
@@ -681,5 +680,4 @@ def main():
     )
 
 
-if __name__ == "__main__":
-    main()
+main()
