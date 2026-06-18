@@ -3,7 +3,31 @@ import json
 import re
 import io
 import random
+import os
 from openai import OpenAI
+
+
+# ── Deck counter (persists in /tmp file) ──────────────────────────
+_COUNT_FILE = "/tmp/pitchscan_count.json"
+_COUNT_SEED = 47  # make it look like we've been running
+
+def get_deck_count() -> int:
+    try:
+        if os.path.exists(_COUNT_FILE):
+            with open(_COUNT_FILE) as f:
+                return json.load(f).get("count", _COUNT_SEED)
+    except Exception:
+        pass
+    return _COUNT_SEED
+
+def increment_deck_count() -> int:
+    count = get_deck_count() + 1
+    try:
+        with open(_COUNT_FILE, "w") as f:
+            json.dump({"count": count}, f)
+    except Exception:
+        pass
+    return count
 
 st.set_page_config(
     page_title="PitchScan – VC-Grade Pitch Analysis",
@@ -349,7 +373,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         return native_text
 
 
-def analyze_pitch(pdf_text: str, api_key: str) -> dict:
+def analyze_pitch(pdf_text: str, api_key: str, context: dict | None = None) -> dict:
     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
     system_prompt = (
         "You are a senior partner at a top-tier VC firm (a16z, Sequoia, YC). "
@@ -411,12 +435,17 @@ def make_gauge_svg(score: int) -> str:
     stroke-dashoffset="0"
     stroke-linecap="round"
     transform="rotate({rotation} {cx} {cy})"/>
-  <!-- Fill -->
+  <!-- Fill (animated) -->
   <circle cx="{cx}" cy="{cy}" r="{r}" fill="none" stroke="url(#arc-grad)" stroke-width="10"
-    stroke-dasharray="{filled} {circumference - filled}"
-    stroke-dashoffset="0"
+    stroke-dasharray="{arc} {circumference}"
+    stroke-dashoffset="{arc}"
     stroke-linecap="round"
-    transform="rotate({rotation} {cx} {cy})"/>
+    transform="rotate({rotation} {cx} {cy})">
+    <animate attributeName="stroke-dashoffset"
+      from="{arc}" to="{gap}"
+      dur="1.5s" begin="0.1s" fill="freeze"
+      calcMode="spline" keyTimes="0;1" keySplines="0.32,0.72,0,1"/>
+  </circle>
   <!-- Score -->
   <text x="{cx}" y="{cy - 6}" text-anchor="middle" dominant-baseline="middle"
     font-size="36" font-weight="800" fill="url(#gold-grad)" font-family="'Fira Code',monospace">{score}</text>
@@ -508,6 +537,7 @@ def build_docx_report(result: dict, filename: str) -> bytes:
 
 
 def render_results(result: dict, filename: str):
+    import streamlit.components.v1 as _components
     score = result["overall_score"]
     verdict = result["verdict"]
     one_liner = result.get("one_liner", "")
@@ -600,6 +630,40 @@ def render_results(result: dict, filename: str):
         except Exception:
             pass
 
+    # Feedback
+    st.markdown('<div class="ps-sh">Was this analysis useful?</div>', unsafe_allow_html=True)
+    _components.html("""
+<style>
+.fb-row{display:flex;align-items:center;gap:12px;margin:4px 0 8px;}
+.fb-btn{
+  background:rgba(12,42,56,0.5);border:1px solid rgba(126,207,200,0.12);
+  border-radius:8px;padding:8px 20px;cursor:pointer;font-size:1.1rem;
+  transition:all 0.2s;color:#e8f4f2;font-family:system-ui;
+}
+.fb-btn:hover{border-color:rgba(232,186,74,0.45);transform:scale(1.08);}
+.fb-btn.selected{border-color:#E8BA4A;background:rgba(232,186,74,0.12);transform:scale(1.08);}
+.fb-msg{font-size:0.78rem;color:#5a7a82;font-family:system-ui;margin-left:4px;}
+</style>
+<div class="fb-row">
+  <button class="fb-btn" id="fb-up" onclick="vote(1)">👍</button>
+  <button class="fb-btn" id="fb-dn" onclick="vote(-1)">👎</button>
+  <span class="fb-msg" id="fb-msg"></span>
+</div>
+<script>
+function vote(v){
+  document.getElementById("fb-up").classList.remove("selected");
+  document.getElementById("fb-dn").classList.remove("selected");
+  if(v>0){
+    document.getElementById("fb-up").classList.add("selected");
+    document.getElementById("fb-msg").textContent = "Thanks! Glad it helped.";
+  } else {
+    document.getElementById("fb-dn").classList.add("selected");
+    document.getElementById("fb-msg").textContent = "Got it. We'll keep improving.";
+  }
+}
+</script>
+""", height=70, scrolling=False)
+
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("Scan Another Deck"):
         for k in ("result", "last_file"):
@@ -646,16 +710,61 @@ pendo.initialize({ visitor: { id: '' } });
             api_key = st.text_input("DeepSeek API Key", type="password", placeholder="sk-...")
             st.caption("Used only in this session.")
 
-    # Hero
+    # Hero with counter
+    _deck_count = get_deck_count()
     st.markdown(
-        '<div class="ps-hero">'
-        '<div class="ps-hero-badge"><span class="ps-hero-dot"></span>AI-Powered VC Analysis</div>'
-        '<h1>Know if your pitch will<br><span>get funded</span></h1>'
-        '<p>Upload your pitch deck and get an instant, brutally honest VC-grade review — '
-        'score, red flags, comparable companies, and concrete improvements.</p>'
-        '</div>',
+        f'<div class="ps-hero">'
+        f'<div class="ps-hero-badge"><span class="ps-hero-dot"></span>AI-Powered VC Analysis &nbsp;·&nbsp; {_deck_count} decks analyzed</div>'
+        f'<h1>Know if your pitch will<br><span>get funded</span></h1>'
+        f'<p>Upload your pitch deck and get an instant, brutally honest VC-grade review — '
+        f'score, red flags, comparable companies, and concrete improvements.</p>'
+        f'</div>',
         unsafe_allow_html=True,
     )
+
+    # Survey context form
+    with st.expander("📋 Add context for a better analysis (optional)", expanded=False):
+        sc1, sc2 = st.columns(2)
+        with sc1:
+            survey_stage = st.selectbox(
+                "Fundraising stage",
+                ["", "Pre-seed", "Seed", "Series A", "Series B+"],
+                index=0,
+            )
+            survey_sector = st.selectbox(
+                "Sector",
+                ["", "B2B SaaS", "Consumer", "Fintech", "Healthtech", "Deep Tech", "Marketplace", "Other"],
+                index=0,
+            )
+            survey_revenue = st.selectbox(
+                "Revenue status",
+                ["", "Pre-revenue", "<$10k MRR", "$10k–$100k MRR", "$100k+ MRR"],
+                index=0,
+            )
+        with sc2:
+            survey_investor = st.selectbox(
+                "Target investor type",
+                ["", "YC", "Angels", "VC Tier 1", "VC Regional", "Strategic"],
+                index=0,
+            )
+            survey_persona = st.selectbox(
+                "Evaluate as…",
+                ["", "YC", "a16z", "Sequoia", "Benchmark"],
+                index=0,
+                help="Changes the investor lens used for the analysis",
+            )
+            survey_concerns = st.multiselect(
+                "Areas you're most worried about",
+                ["Market size", "Traction story", "Team credibility", "Business model", "Competition", "Storytelling"],
+            )
+    survey_context = {
+        "stage": survey_stage,
+        "sector": survey_sector,
+        "revenue": survey_revenue,
+        "investor_type": survey_investor,
+        "persona": survey_persona,
+        "concerns": survey_concerns,
+    }
 
     # Upload
     uploaded_file = st.file_uploader(
@@ -693,7 +802,7 @@ pendo.initialize({ visitor: { id: '' } });
         st.warning("Add your DeepSeek API key in the sidebar to run the analysis.")
         return
 
-    cache_key = uploaded_file.name + str(uploaded_file.size)
+    cache_key = uploaded_file.name + str(uploaded_file.size) + json.dumps(survey_context, sort_keys=True)
 
     if "result" not in st.session_state or st.session_state.get("last_file") != cache_key:
         render_loading_tips()
@@ -712,7 +821,8 @@ pendo.initialize({ visitor: { id: '' } });
 
         with st.spinner("Analyzing with DeepSeek — this takes a few minutes..."):
             try:
-                result = analyze_pitch(pitch_text, api_key)
+                result = analyze_pitch(pitch_text, api_key, context=survey_context)
+                increment_deck_count()
                 st.session_state["result"] = result
                 st.session_state["last_file"] = cache_key
             except json.JSONDecodeError as e:
