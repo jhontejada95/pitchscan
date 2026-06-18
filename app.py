@@ -5,7 +5,7 @@ import io
 import random
 from openai import OpenAI
 
-NOVUS_APP_ID = "26e1d6da-25ad-4964-981b-411e2faef7b0"
+NOVUS_APP_ID = "f2950f7e-4ee3-4154-81f4-c3f25610a0fc"
 
 VC_TIPS = [
     ("Paul Graham (YC)", "The best decks tell a story, not a business plan. Lead with a specific customer who has a painful problem."),
