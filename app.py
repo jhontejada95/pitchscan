@@ -739,6 +739,35 @@ pendo.initialize({ visitor: { id: '' } });
     st.markdown(CSS, unsafe_allow_html=True)
 
     # Sidebar: API key
+    _PROVIDERS = {
+        "DeepSeek": {
+            "base_url": "https://api.deepseek.com",
+            "model": "deepseek-chat",
+            "placeholder": "sk-...",
+            "link": "https://platform.deepseek.com",
+            "link_label": "Get a free DeepSeek key",
+            "note": "~$0.004 per analysis",
+        },
+        "OpenAI (GPT-4o)": {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o",
+            "placeholder": "sk-...",
+            "link": "https://platform.openai.com/api-keys",
+            "link_label": "Get an OpenAI key",
+            "note": "~$0.03 per analysis",
+        },
+        "Groq (free tier)": {
+            "base_url": "https://api.groq.com/openai/v1",
+            "model": "llama-3.3-70b-versatile",
+            "placeholder": "gsk_...",
+            "link": "https://console.groq.com/keys",
+            "link_label": "Get a free Groq key",
+            "note": "Free tier · very fast",
+        },
+    }
+
+    # Try built-in key first
+    api_key = None
     _has_builtin = False
     try:
         _secret = st.secrets.get("DEEPSEEK_API_KEY", "")
@@ -748,60 +777,47 @@ pendo.initialize({ visitor: { id: '' } });
     except Exception:
         pass
 
-    # Provider config map
-    _PROVIDERS = {
-        "DeepSeek": {
-            "base_url": "https://api.deepseek.com",
-            "model": "deepseek-chat",
-            "placeholder": "sk-...",
-            "link": "https://platform.deepseek.com",
-            "link_label": "Get free DeepSeek key →",
-            "note": "~$0.004 per analysis",
-        },
-        "OpenAI (GPT-4o)": {
-            "base_url": "https://api.openai.com/v1",
-            "model": "gpt-4o",
-            "placeholder": "sk-...",
-            "link": "https://platform.openai.com/api-keys",
-            "link_label": "Get OpenAI key →",
-            "note": "~$0.03 per analysis",
-        },
-        "Groq (free tier)": {
-            "base_url": "https://api.groq.com/openai/v1",
-            "model": "llama-3.3-70b-versatile",
-            "placeholder": "gsk_...",
-            "link": "https://console.groq.com/keys",
-            "link_label": "Get free Groq key →",
-            "note": "Free tier available",
-        },
-    }
+    # Default provider = DeepSeek (built-in)
+    st.session_state["_provider"] = _PROVIDERS["DeepSeek"]
 
-    with st.sidebar:
-        st.markdown("### AI Provider")
-        _provider_name = st.selectbox(
-            "Choose provider",
-            list(_PROVIDERS.keys()),
-            label_visibility="collapsed",
+    # If cap reached and no user key yet, show inline provider/key block
+    _cap_hit = _has_builtin and daily_cap_reached()
+    _user_key = st.session_state.get("_user_api_key", "")
+
+    if _cap_hit and not _user_key:
+        st.markdown(
+            '<div style="background:rgba(232,186,74,0.07);border:1px solid rgba(232,186,74,0.22);' +
+            'border-radius:14px;padding:1.4rem 1.6rem;margin:0.5rem 0 1.5rem;">' +
+            '<div style="color:#E8BA4A;font-weight:700;font-size:0.9rem;margin-bottom:0.3rem;">' +
+            '⏳ Daily free quota reached (20 analyses/day)</div>' +
+            '<div style="color:#5a7a82;font-size:0.8rem;line-height:1.6;margin-bottom:1rem;">' +
+            'Add your own API key to keep going — keys are never stored, only used for your analysis.</div></div>',
+            unsafe_allow_html=True,
         )
-        _prov = _PROVIDERS[_provider_name]
-
-        st.markdown("### API Key")
-        _user_key = st.text_input(
-            f"{_provider_name} API key",
-            type="password",
-            placeholder=_prov["placeholder"],
-            label_visibility="collapsed",
+        _kc1, _kc2 = st.columns([1, 2])
+        with _kc1:
+            _prov_name = st.selectbox("Provider", list(_PROVIDERS.keys()), key="prov_sel")
+        _prov_cfg = _PROVIDERS[_prov_name]
+        with _kc2:
+            _user_key = st.text_input(
+                "API key",
+                type="password",
+                placeholder=_prov_cfg["placeholder"],
+                key="user_key_input",
+            )
+        st.caption(
+            f"🔒 Never stored · used only for this analysis · "
+            f"[{_prov_cfg['link_label']}]({_prov_cfg['link']}) · {_prov_cfg['note']}"
         )
         if _user_key:
+            st.session_state["_user_api_key"] = _user_key
+            st.session_state["_provider"] = _prov_cfg
             api_key = _user_key
-            st.success("🔒 Your key is used only for this analysis and is never stored.")
-        elif _has_builtin and _provider_name == "DeepSeek":
-            _rem = daily_remaining()
-            st.caption(f"Using shared key · **{_rem} free analyses left today**")
-        st.caption(f"[{_prov['link_label']}]({_prov['link']}) · {_prov['note']}")
-
-        # Store provider config in session for use in analyze_pitch
-        st.session_state["_provider"] = _prov
+    elif _user_key:
+        # User already entered key previously in this session
+        _prov_cfg = st.session_state.get("_provider", _PROVIDERS["DeepSeek"])
+        api_key = _user_key
+        st.session_state["_provider"] = _prov_cfg
 
     # Hero with counter
     _deck_count = get_deck_count()
