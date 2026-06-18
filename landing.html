@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PitchScan — Know if your pitch will get funded</title>
+<meta name="description" content="Upload your startup pitch deck and get an instant, brutally honest VC-grade analysis. Score, red flags, comparable companies, and actionable improvements.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --navy:#050a14;--navy2:#070d1a;--gold:#C9A84C;--gold2:#f0d080;
+  --blue:#2563EB;--text:#e2e8f0;--muted:#64748b;--dim:#334155;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--navy);color:var(--text);font-family:"Inter",sans-serif;overflow-x:hidden;}
+
+/* ── BG ── */
+.bg-glow{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+.glow1{position:absolute;width:700px;height:700px;border-radius:50%;
+  background:radial-gradient(circle,rgba(37,99,235,0.12) 0%,transparent 70%);
+  top:-200px;left:-200px;}
+.glow2{position:absolute;width:600px;height:600px;border-radius:50%;
+  background:radial-gradient(circle,rgba(201,168,76,0.08) 0%,transparent 70%);
+  bottom:-150px;right:-100px;}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;
+  background:rgba(5,10,20,0.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,0.05);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2.5rem;height:64px;}
+.nav-logo{font-size:1.1rem;font-weight:700;color:#fff;letter-spacing:-0.5px;}
+.nav-logo span{color:var(--gold);}
+.nav-links{display:flex;gap:2rem;list-style:none;}
+.nav-links a{color:var(--muted);font-size:0.85rem;text-decoration:none;transition:color 0.2s;}
+.nav-links a:hover{color:var(--text);}
+.nav-cta{background:var(--blue);color:#fff;padding:0.5rem 1.4rem;border-radius:8px;
+  font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s;}
+.nav-cta:hover{background:#1d4ed8;box-shadow:0 0 24px rgba(37,99,235,0.4);}
+
+/* ── HERO ── */
+.hero{position:relative;z-index:1;padding:140px 2rem 100px;text-align:center;max-width:860px;margin:0 auto;}
+.hero-badge{display:inline-block;background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);
+  color:var(--gold);font-size:0.7rem;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;
+  padding:0.35rem 1.1rem;border-radius:99px;margin-bottom:1.8rem;}
+.hero h1{font-size:clamp(2.4rem,5vw,3.8rem);font-weight:800;line-height:1.1;
+  color:#fff;margin-bottom:1.4rem;}
+.hero h1 em{font-style:normal;background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero p{font-size:1.1rem;color:var(--muted);max-width:580px;margin:0 auto 2.5rem;line-height:1.75;}
+.hero-cta-group{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;}
+.btn-primary{background:linear-gradient(135deg,var(--blue),#1d4ed8);color:#fff;
+  padding:0.85rem 2.2rem;border-radius:10px;font-size:0.95rem;font-weight:600;
+  text-decoration:none;transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;}
+.btn-primary:hover{box-shadow:0 0 32px rgba(37,99,235,0.5);transform:translateY(-1px);}
+.btn-secondary{background:rgba(255,255,255,0.05);color:var(--text);border:1px solid rgba(255,255,255,0.1);
+  padding:0.85rem 2rem;border-radius:10px;font-size:0.95rem;font-weight:500;
+  text-decoration:none;transition:all 0.2s;}
+.btn-secondary:hover{border-color:rgba(201,168,76,0.4);color:var(--gold);}
+
+/* Hero stat row */
+.hero-stats{display:flex;gap:2.5rem;justify-content:center;margin-top:3.5rem;flex-wrap:wrap;}
+.stat{text-align:center;}
+.stat-num{font-size:1.6rem;font-weight:800;color:var(--gold);font-family:"Fira Code",monospace;}
+.stat-label{font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:0.2rem;}
+
+/* ── SECTION WRAPPER ── */
+.section{position:relative;z-index:1;padding:100px 2rem;max-width:1080px;margin:0 auto;}
+.section-badge{font-size:0.68rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;
+  color:var(--blue);margin-bottom:0.8rem;}
+.section-title{font-size:clamp(1.8rem,3.5vw,2.6rem);font-weight:800;color:#fff;
+  line-height:1.2;margin-bottom:1rem;}
+.section-title span{background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.section-sub{font-size:1rem;color:var(--muted);max-width:520px;line-height:1.75;}
+
+/* ── PROBLEM ── */
+.problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center;margin-top:3rem;}
+.problem-cards{display:flex;flex-direction:column;gap:1rem;}
+.pcard{background:rgba(239,68,68,0.05);border:1px solid rgba(239,68,68,0.15);
+  border-radius:12px;padding:1.2rem 1.4rem;display:flex;gap:1rem;align-items:flex-start;}
+.pcard-icon{font-size:1.2rem;margin-top:0.1rem;flex-shrink:0;}
+.pcard-title{color:#fca5a5;font-weight:600;font-size:0.9rem;margin-bottom:0.3rem;}
+.pcard-desc{color:var(--muted);font-size:0.82rem;line-height:1.5;}
+.timeline-compare{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;padding:2rem;}
+.tc-row{margin-bottom:1.5rem;}
+.tc-label{font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--muted);margin-bottom:0.5rem;}
+.tc-bar{height:10px;border-radius:99px;margin-bottom:0.3rem;}
+.tc-old{background:linear-gradient(90deg,rgba(239,68,68,0.6),rgba(239,68,68,0.3));width:100%;}
+.tc-new{background:linear-gradient(90deg,var(--blue),var(--gold));width:8%;}
+.tc-val{font-size:0.8rem;color:var(--muted);}
+.tc-val strong{color:var(--text);}
+
+/* ── HOW IT WORKS ── */
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1.5rem;margin-top:3rem;}
+.step{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);
+  border-radius:14px;padding:2rem 1.5rem;}
+.step-num{font-size:2rem;font-weight:800;color:rgba(37,99,235,0.3);
+  font-family:"Fira Code",monospace;margin-bottom:1rem;}
+.step-title{font-size:1rem;font-weight:700;color:#fff;margin-bottom:0.5rem;}
+.step-desc{font-size:0.85rem;color:var(--muted);line-height:1.6;}
+.step-connector{display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.1);font-size:1.2rem;}
+
+/* ── FEATURES ── */
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;margin-top:3rem;}
+.feat{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);
+  border-radius:12px;padding:1.5rem;}
+.feat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;margin-bottom:1rem;}
+.feat-icon.blue{background:rgba(37,99,235,0.15);}
+.feat-icon.gold{background:rgba(201,168,76,0.12);}
+.feat-icon.green{background:rgba(16,185,129,0.12);}
+.feat-icon.red{background:rgba(239,68,68,0.12);}
+.feat-icon.purple{background:rgba(139,92,246,0.12);}
+.feat-icon.teal{background:rgba(20,184,166,0.12);}
+.feat-title{font-weight:700;color:#fff;font-size:0.95rem;margin-bottom:0.4rem;}
+.feat-desc{font-size:0.82rem;color:var(--muted);line-height:1.6;}
+
+/* ── SAMPLE RESULT ── */
+.sample-wrap{margin-top:3rem;background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:2.5rem;overflow:hidden;}
+.sample-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;}
+.sample-title{font-weight:700;color:#fff;font-size:1rem;}
+.sample-verdict{background:rgba(16,185,129,0.12);color:#10b981;
+  border:1px solid rgba(16,185,129,0.3);border-radius:99px;
+  padding:0.3rem 1rem;font-size:0.78rem;font-weight:600;}
+.sample-score{font-size:3rem;font-weight:800;color:var(--gold);
+  font-family:"Fira Code",monospace;text-align:center;}
+.sample-score-label{color:var(--muted);font-size:0.7rem;text-transform:uppercase;letter-spacing:2px;text-align:center;}
+.sample-bars{margin-top:1.5rem;}
+.sbar-row{display:flex;align-items:center;gap:1rem;margin-bottom:0.7rem;}
+.sbar-name{min-width:90px;font-size:0.78rem;color:var(--muted);}
+.sbar-bg{flex:1;height:6px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;}
+.sbar-fill{height:100%;border-radius:99px;}
+.sbar-score{min-width:28px;text-align:right;font-size:0.75rem;color:#94a3b8;font-family:"Fira Code",monospace;}
+
+/* ── CTA BAND ── */
+.cta-band{position:relative;z-index:1;margin:0;padding:100px 2rem;text-align:center;
+  background:linear-gradient(135deg,rgba(37,99,235,0.08),rgba(201,168,76,0.06));
+  border-top:1px solid rgba(255,255,255,0.05);}
+.cta-band h2{font-size:clamp(2rem,3.5vw,2.8rem);font-weight:800;color:#fff;margin-bottom:1rem;}
+.cta-band h2 span{background:linear-gradient(135deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.cta-band p{color:var(--muted);font-size:1rem;max-width:480px;margin:0 auto 2.5rem;line-height:1.75;}
+
+/* ── FOOTER ── */
+footer{position:relative;z-index:1;border-top:1px solid rgba(255,255,255,0.05);
+  padding:2rem;text-align:center;color:var(--dim);font-size:0.78rem;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  nav{padding:0 1.2rem;}
+  .nav-links{display:none;}
+  .problem-grid,.how-steps,.features-grid{grid-template-columns:1fr;}
+  .hero{padding:100px 1.2rem 60px;}
+  .section{padding:60px 1.2rem;}
+}
+
+/* ── REVEAL ── */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity 0.7s ease,transform 0.7s ease;}
+.reveal.visible{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+<div class="bg-glow"><div class="glow1"></div><div class="glow2"></div></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Pitch<span>Scan</span></div>
+  <ul class="nav-links">
+    <li><a href="#problem">The Problem</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#features">Features</a></li>
+  </ul>
+  <a href="https://pitchscan-7mbcqb2xsy8z9aft6skqxs.streamlit.app" class="nav-cta" target="_blank">Analyze Your Deck &rarr;</a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">AI-Powered VC Analysis</div>
+  <h1>Know if your pitch will<br><em>get funded</em></h1>
+  <p>Upload your pitch deck and get a brutally honest, VC-grade review in minutes — score, red flags, comparable companies, and concrete improvements.</p>
+  <div class="hero-cta-group">
+    <a href="https://pitchscan-7mbcqb2xsy8z9aft6skqxs.streamlit.app" class="btn-primary" target="_blank">&#x1F4E4; Scan My Pitch Deck</a>
+    <a href="#how" class="btn-secondary">See How It Works</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat"><div class="stat-num">6</div><div class="stat-label">Sections Scored</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Red Flags Found</div></div>
+    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Comparables</div></div>
+    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Improvements</div></div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem" class="section">
+  <div class="reveal">
+    <div class="section-badge">The Problem</div>
+    <h2 class="section-title">Most founders find out too late<br>their pitch <span>isn&rsquo;t working</span></h2>
+    <p class="section-sub">You spend months building, and then a 30-minute partner meeting reveals the gaps you didn&rsquo;t know you had.</p>
+  </div>
+  <div class="problem-grid reveal">
+    <div class="problem-cards">
+      <div class="pcard">
+        <div class="pcard-icon">&#9202;</div>
+        <div>
+          <div class="pcard-title">Feedback takes weeks</div>
+          <div class="pcard-desc">Warm intros, scheduling, follow-ups — by the time you hear "no," your runway is shorter.</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pcard-icon">&#128176;</div>
+        <div>
+          <div class="pcard-title">Advisors are expensive and biased</div>
+          <div class="pcard-desc">Pitch coaches charge $500–$2,000/session and often tell you what you want to hear.</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pcard-icon">&#128270;</div>
+        <div>
+          <div class="pcard-title">You don&rsquo;t know what VCs actually look for</div>
+          <div class="pcard-desc">Unit economics, market sizing, defensibility — most decks miss the signals that matter most to investors.</div>
+        </div>
+      </div>
+      <div class="pcard">
+        <div class="pcard-icon">&#9888;</div>
+        <div>
+          <div class="pcard-title">Pattern-matching is invisible</div>
+          <div class="pcard-desc">VCs instantly compare your deck to every deal they&rsquo;ve seen. You never know which pattern you triggered.</div>
+        </div>
+      </div>
+    </div>
+    <div class="timeline-compare">
+      <div class="tc-row">
+        <div class="tc-label">Traditional feedback loop</div>
+        <div class="tc-bar tc-old"></div>
+        <div class="tc-val">Weeks of meetings &mdash; <strong>$500–$2,000</strong></div>
+      </div>
+      <div class="tc-row">
+        <div class="tc-label">PitchScan analysis</div>
+        <div class="tc-bar tc-new"></div>
+        <div class="tc-val">Minutes &mdash; <strong>Free</strong></div>
+      </div>
+      <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.06);">
+        <div style="color:#94a3b8;font-size:0.82rem;line-height:1.7;">
+          PitchScan gives you the same critical lens a partner at a16z or YC applies — before you walk into the room.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section">
+  <div class="reveal" style="text-align:center;max-width:600px;margin:0 auto;">
+    <div class="section-badge">How It Works</div>
+    <h2 class="section-title">Three steps to a <span>better pitch</span></h2>
+    <p class="section-sub">No signup required. Upload your deck and get actionable intelligence in minutes.</p>
+  </div>
+  <div class="how-steps reveal">
+    <div class="step">
+      <div class="step-num">01</div>
+      <div class="step-title">Upload your PDF</div>
+      <div class="step-desc">Drag and drop your pitch deck PDF. Works with text-based and image-only decks — our OCR handles both formats automatically.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">02</div>
+      <div class="step-title">AI reads like a VC</div>
+      <div class="step-desc">Our model analyzes problem clarity, solution strength, market size, traction signals, team credibility, and financial fundamentals — the exact framework top VCs use.</div>
+    </div>
+    <div class="step">
+      <div class="step-num">03</div>
+      <div class="step-title">Get your report</div>
+      <div class="step-desc">Receive a score from 0–100, a verdict (INVEST / MONITOR / PASS), detailed section breakdowns, red flags, comparable companies, and 5 concrete improvements to make before your next meeting.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="section">
+  <div class="reveal">
+    <div class="section-badge">What You Get</div>
+    <h2 class="section-title">Everything a VC sees<br><span>before saying no</span></h2>
+  </div>
+  <div class="features-grid reveal">
+    <div class="feat">
+      <div class="feat-icon gold">&#127919;</div>
+      <div class="feat-title">VC Score (0–100)</div>
+      <div class="feat-desc">A single number that cuts through the noise. Based on 6 weighted dimensions that top investors actually care about.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon blue">&#128202;</div>
+      <div class="feat-title">Section Breakdown</div>
+      <div class="feat-desc">Scored on Problem, Solution, Market, Traction, Team, and Financials — with a 2-sentence explanation for each.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon red">&#128681;</div>
+      <div class="feat-title">Red Flags</div>
+      <div class="feat-desc">The specific things that would make a VC pass. Not generic advice — issues found in your actual deck.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon purple">&#128269;</div>
+      <div class="feat-title">Comparable Companies</div>
+      <div class="feat-desc">3 real companies VCs will mentally compare you to — and what that pattern means for your fundraise.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon green">&#128161;</div>
+      <div class="feat-title">5 Actionable Improvements</div>
+      <div class="feat-desc">Concrete changes to make before your next pitch — not vague tips, but specific things to add or reframe.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon teal">&#128190;</div>
+      <div class="feat-title">Export Report</div>
+      <div class="feat-desc">Download your full analysis as JSON, Markdown, or a formatted Word document to share with co-founders and advisors.</div>
+    </div>
+  </div>
+
+  <!-- Sample result preview -->
+  <div class="sample-wrap reveal">
+    <div class="sample-header">
+      <div class="sample-title">Sample Analysis Output</div>
+      <div class="sample-verdict">&#9679; INVEST</div>
+    </div>
+    <div style="display:grid;grid-template-columns:120px 1fr;gap:2rem;align-items:center;">
+      <div>
+        <div class="sample-score">78</div>
+        <div class="sample-score-label">VC Score</div>
+      </div>
+      <div class="sample-bars">
+        <div class="sbar-row"><span class="sbar-name">Problem</span><div class="sbar-bg"><div class="sbar-fill" style="width:88%;background:#10b981;"></div></div><span class="sbar-score">88</span></div>
+        <div class="sbar-row"><span class="sbar-name">Solution</span><div class="sbar-bg"><div class="sbar-fill" style="width:82%;background:#10b981;"></div></div><span class="sbar-score">82</span></div>
+        <div class="sbar-row"><span class="sbar-name">Market</span><div class="sbar-bg"><div class="sbar-fill" style="width:75%;background:#10b981;"></div></div><span class="sbar-score">75</span></div>
+        <div class="sbar-row"><span class="sbar-name">Traction</span><div class="sbar-bg"><div class="sbar-fill" style="width:60%;background:#f59e0b;"></div></div><span class="sbar-score">60</span></div>
+        <div class="sbar-row"><span class="sbar-name">Team</span><div class="sbar-bg"><div class="sbar-fill" style="width:78%;background:#10b981;"></div></div><span class="sbar-score">78</span></div>
+        <div class="sbar-row"><span class="sbar-name">Financials</span><div class="sbar-bg"><div class="sbar-fill" style="width:55%;background:#f59e0b;"></div></div><span class="sbar-score">55</span></div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.05);">
+      <div style="font-size:0.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:#ef4444;margin-bottom:0.6rem;">Top Red Flags Identified</div>
+      <div style="display:flex;flex-direction:column;gap:0.4rem;">
+        <div style="background:rgba(239,68,68,0.05);border-left:2px solid #ef4444;border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;font-size:0.78rem;color:#fca5a5;">Traction slide shows total signups without revealing activation or retention rates</div>
+        <div style="background:rgba(239,68,68,0.05);border-left:2px solid #ef4444;border-radius:0 6px 6px 0;padding:0.5rem 0.8rem;font-size:0.78rem;color:#fca5a5;">Financial model assumes 3% market share with no bottom-up customer acquisition logic</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA BAND -->
+<div class="cta-band">
+  <div class="reveal">
+    <h2>Stop guessing.<br><span>Know before you pitch.</span></h2>
+    <p>Upload your deck now and get your VC-grade analysis in minutes. Free. No signup required.</p>
+    <a href="https://pitchscan-7mbcqb2xsy8z9aft6skqxs.streamlit.app" class="btn-primary" target="_blank" style="font-size:1rem;padding:1rem 2.5rem;">
+      &#x1F4E4; Scan My Pitch Deck
+    </a>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <strong style="color:#334155;">PitchScan</strong> &mdash; Built for World Product Day Hackathon 2026 &middot; Powered by DeepSeek AI
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if(e.isIntersecting){ e.target.classList.add('visible'); } });
+}, {threshold: 0.1});
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
