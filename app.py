@@ -745,28 +745,28 @@ pendo.initialize({ visitor: { id: '' } });
             "model": "deepseek-chat",
             "placeholder": "sk-...",
             "link": "https://platform.deepseek.com",
-            "link_label": "Get a free DeepSeek key",
-            "note": "~$0.004 per analysis",
+            "link_label": "Get free key",
+            "note": "~$0.004/analysis",
         },
         "OpenAI (GPT-4o)": {
             "base_url": "https://api.openai.com/v1",
             "model": "gpt-4o",
             "placeholder": "sk-...",
             "link": "https://platform.openai.com/api-keys",
-            "link_label": "Get an OpenAI key",
-            "note": "~$0.03 per analysis",
+            "link_label": "Get key",
+            "note": "~$0.03/analysis",
         },
-        "Groq (free tier)": {
+        "Groq (free)": {
             "base_url": "https://api.groq.com/openai/v1",
             "model": "llama-3.3-70b-versatile",
             "placeholder": "gsk_...",
             "link": "https://console.groq.com/keys",
-            "link_label": "Get a free Groq key",
-            "note": "Free tier · very fast",
+            "link_label": "Get free key",
+            "note": "Free tier · fast",
         },
     }
 
-    # Try built-in key first
+    # Try built-in key
     api_key = None
     _has_builtin = False
     try:
@@ -777,47 +777,35 @@ pendo.initialize({ visitor: { id: '' } });
     except Exception:
         pass
 
-    # Default provider = DeepSeek (built-in)
-    st.session_state["_provider"] = _PROVIDERS["DeepSeek"]
+    st.session_state.setdefault("_provider", _PROVIDERS["DeepSeek"])
 
-    # If cap reached and no user key yet, show inline provider/key block
-    _cap_hit = _has_builtin and daily_cap_reached()
-    _user_key = st.session_state.get("_user_api_key", "")
-
-    if _cap_hit and not _user_key:
+    # Always-visible provider + key row
+    _kc1, _kc2, _kc3 = st.columns([1.2, 2, 0.8])
+    with _kc1:
+        _prov_name = st.selectbox("AI Provider", list(_PROVIDERS.keys()), key="prov_sel", label_visibility="collapsed")
+    _prov_cfg = _PROVIDERS[_prov_name]
+    st.session_state["_provider"] = _prov_cfg
+    with _kc2:
+        _user_key = st.text_input(
+            "API key",
+            type="password",
+            placeholder=f"Your {_prov_name} key (optional — {_prov_cfg['note']})",
+            key="user_key_input",
+            label_visibility="collapsed",
+        )
+    with _kc3:
         st.markdown(
-            '<div style="background:rgba(232,186,74,0.07);border:1px solid rgba(232,186,74,0.22);' +
-            'border-radius:14px;padding:1.4rem 1.6rem;margin:0.5rem 0 1.5rem;">' +
-            '<div style="color:#E8BA4A;font-weight:700;font-size:0.9rem;margin-bottom:0.3rem;">' +
-            '⏳ Daily free quota reached (20 analyses/day)</div>' +
-            '<div style="color:#5a7a82;font-size:0.8rem;line-height:1.6;margin-bottom:1rem;">' +
-            'Add your own API key to keep going — keys are never stored, only used for your analysis.</div></div>',
+            f'<div style="padding:0.45rem 0;font-size:0.75rem;color:#5a7a82;">' +
+            f'<a href="{_prov_cfg["link"]}" target="_blank" style="color:#7ECFC8;text-decoration:none;">' +
+            f'↗ {_prov_cfg["link_label"]}</a></div>',
             unsafe_allow_html=True,
         )
-        _kc1, _kc2 = st.columns([1, 2])
-        with _kc1:
-            _prov_name = st.selectbox("Provider", list(_PROVIDERS.keys()), key="prov_sel")
-        _prov_cfg = _PROVIDERS[_prov_name]
-        with _kc2:
-            _user_key = st.text_input(
-                "API key",
-                type="password",
-                placeholder=_prov_cfg["placeholder"],
-                key="user_key_input",
-            )
-        st.caption(
-            f"🔒 Never stored · used only for this analysis · "
-            f"[{_prov_cfg['link_label']}]({_prov_cfg['link']}) · {_prov_cfg['note']}"
-        )
-        if _user_key:
-            st.session_state["_user_api_key"] = _user_key
-            st.session_state["_provider"] = _prov_cfg
-            api_key = _user_key
-    elif _user_key:
-        # User already entered key previously in this session
-        _prov_cfg = st.session_state.get("_provider", _PROVIDERS["DeepSeek"])
+    if _user_key:
         api_key = _user_key
-        st.session_state["_provider"] = _prov_cfg
+        st.caption("🔒 Your key is used only for this analysis and is never stored.")
+    elif _has_builtin:
+        _rem = daily_remaining()
+        st.caption(f"Using shared key · {_rem} free analyses left today · or add your own key above for unlimited access")
 
     # Hero with counter
     _deck_count = get_deck_count()
