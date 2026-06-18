@@ -168,6 +168,29 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
         import pytesseract
         from pdf2image import convert_from_bytes
 
+        st.info("Image-based PDF — running OCR (20-40 sec)...", icon="🔍")
+        images = convert_from_bytes(file_bytes, dpi=200)
+        ocr_parts = []
+        for img in images:
+            text = pytesseract.image_to_string(img, lang="eng")
+            if text.strip():
+                ocr_parts.append(text.strip())
+        ocr_text = "\n\n".join(ocr_parts).strip()
+        if ocr_text:
+            return ocr_text
+        st.warning("OCR ran but extracted no text.")
+        return ""
+    except ImportError as e:
+        import traceback
+        st.error(f"OCR library not available: {e}")
+        st.code(traceback.format_exc())
+        return ""
+    except Exception as e:
+        import traceback
+        st.error(f"OCR error: {type(e).__name__}: {e}")
+        st.code(traceback.format_exc())
+        return ""
+
         st.info("Image-based PDF detected — running OCR (may take 20-40 sec)...", icon="🔍")
         images = convert_from_bytes(file_bytes, dpi=200)
         ocr_parts = []
