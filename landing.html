@@ -377,6 +377,71 @@ footer{
   .stat{border-right:none;border-bottom:1px solid var(--border);}
   .stat:last-child{border-bottom:none;}
 }
+
+/* ── HERO TERMINAL ── */
+.hero-terminal{
+  margin-top:3.5rem;
+  width:100%;max-width:520px;
+  background:rgba(255,255,255,0.025);
+  border:1px solid var(--border-hi);
+  border-radius:16px;padding:4px;
+  box-shadow:0 0 60px rgba(126,207,200,0.06), 0 24px 64px rgba(0,0,0,0.4);
+}
+.ht-inner{
+  background:#050e1a;border-radius:13px;
+  padding:1.2rem 1.4rem 1.4rem;
+  font-family:"DM Mono",monospace;
+  font-size:0.78rem;
+}
+.ht-bar{
+  display:flex;gap:6px;align-items:center;
+  margin-bottom:1.1rem;padding-bottom:0.9rem;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.ht-dot{width:10px;height:10px;border-radius:50%;}
+.ht-dot-r{background:#ff5f57;}
+.ht-dot-y{background:#febc2e;}
+.ht-dot-g{background:#28c840;}
+.ht-filename{margin-left:auto;color:#2a4050;font-size:0.68rem;}
+.ht-line{
+  display:flex;align-items:center;gap:0.6rem;
+  margin-bottom:0.5rem;min-height:1.4rem;
+  opacity:0;transform:translateY(4px);
+  transition:opacity 0.25s,transform 0.25s;
+}
+.ht-line.show{opacity:1;transform:none;}
+.ht-prefix{color:#2A6B55;}
+.ht-section{color:#5a7a82;min-width:90px;}
+.ht-bar-wrap{flex:1;height:3px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;}
+.ht-bar-fill{height:100%;border-radius:99px;width:0;transition:width 0.6s cubic-bezier(0.32,0.72,0,1);}
+.ht-score{color:#e8f4f2;min-width:26px;text-align:right;}
+.ht-ok{color:#2A6B55;}
+.ht-warn{color:#E09590;}
+.ht-divider{height:1px;background:rgba(255,255,255,0.05);margin:0.8rem 0;}
+.ht-result{
+  display:flex;align-items:center;justify-content:space-between;
+  opacity:0;transition:opacity 0.4s;
+}
+.ht-result.show{opacity:1;}
+.ht-verdict{
+  font-size:0.7rem;font-weight:700;letter-spacing:0.12em;
+  padding:0.25rem 0.7rem;border-radius:99px;
+}
+.ht-verdict-invest{background:rgba(42,107,85,0.18);color:#5ecba1;border:1px solid rgba(42,107,85,0.4);}
+.ht-verdict-monitor{background:rgba(232,186,74,0.12);color:#E8BA4A;border:1px solid rgba(232,186,74,0.3);}
+.ht-verdict-pass{background:rgba(224,149,144,0.12);color:#E09590;border:1px solid rgba(224,149,144,0.3);}
+.ht-big-score{
+  font-size:1.6rem;font-weight:800;letter-spacing:-0.03em;
+  background:linear-gradient(135deg,#E8BA4A,#f0cc6a);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.ht-cursor{
+  display:inline-block;width:7px;height:13px;
+  background:var(--aqua);margin-left:2px;
+  animation:blink 1s step-end infinite;vertical-align:middle;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
 </style>
 <script>
 (function(apiKey){
@@ -420,12 +485,98 @@ pendo.initialize({ visitor: { id: '' } });
     </a>
     <a href="#how" class="btn-ghost">See how it works</a>
   </div>
-  <div class="hero-stats reveal">
-    <div class="stat"><div class="stat-num">6</div><div class="stat-label">Sections Scored</div></div>
-    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Red Flags</div></div>
-    <div class="stat"><div class="stat-num">3</div><div class="stat-label">Comparables</div></div>
-    <div class="stat"><div class="stat-num">5</div><div class="stat-label">Improvements</div></div>
+  <div class="hero-terminal reveal">
+    <div class="ht-inner">
+      <div class="ht-bar">
+        <span class="ht-dot ht-dot-r"></span>
+        <span class="ht-dot ht-dot-y"></span>
+        <span class="ht-dot ht-dot-g"></span>
+        <span class="ht-filename" id="ht-fname">series-a-deck.pdf</span>
+      </div>
+      <div class="ht-line" id="htl0"><span class="ht-prefix">$</span><span style="color:#5a7a82;">pitchscan analyze</span><span class="ht-cursor" id="ht-cursor"></span></div>
+      <div class="ht-line" id="htl1"><span class="ht-prefix">✓</span><span class="ht-section">Problem</span><div class="ht-bar-wrap"><div class="ht-bar-fill" id="htb1" style="background:#7ECFC8;"></div></div><span class="ht-score" id="hts1">—</span><span class="ht-ok">✓</span></div>
+      <div class="ht-line" id="htl2"><span class="ht-prefix">✓</span><span class="ht-section">Solution</span><div class="ht-bar-wrap"><div class="ht-bar-fill" id="htb2" style="background:#7ECFC8;"></div></div><span class="ht-score" id="hts2">—</span><span class="ht-ok">✓</span></div>
+      <div class="ht-line" id="htl3"><span class="ht-prefix">✓</span><span class="ht-section">Market</span><div class="ht-bar-wrap"><div class="ht-bar-fill" id="htb3" style="background:#2A6B55;"></div></div><span class="ht-score" id="hts3">—</span><span class="ht-ok">✓</span></div>
+      <div class="ht-line" id="htl4"><span class="ht-prefix">⚠</span><span class="ht-section">Traction</span><div class="ht-bar-wrap"><div class="ht-bar-fill" id="htb4" style="background:#E09590;"></div></div><span class="ht-score" id="hts4">—</span><span class="ht-warn">⚠</span></div>
+      <div class="ht-line" id="htl5"><span class="ht-prefix">✓</span><span class="ht-section">Team</span><div class="ht-bar-wrap"><div class="ht-bar-fill" id="htb5" style="background:#7ECFC8;"></div></div><span class="ht-score" id="hts5">—</span><span class="ht-ok">✓</span></div>
+      <div class="ht-line" id="htl6"><span class="ht-prefix">⚠</span><span class="ht-section">Financials</span><div class="ht-bar-wrap"><div class="ht-bar-fill" id="htb6" style="background:#E09590;"></div></div><span class="ht-score" id="hts6">—</span><span class="ht-warn">⚠</span></div>
+      <div class="ht-divider"></div>
+      <div class="ht-result" id="ht-result">
+        <span class="ht-big-score" id="ht-final">—</span>
+        <span class="ht-verdict" id="ht-verdict-chip">—</span>
+      </div>
+    </div>
   </div>
+
+  <script>
+  (function(){
+    var decks = [
+      {name:"series-a-deck.pdf", scores:[82,78,74,48,80,52], final:71, verdict:"MONITOR"},
+      {name:"fintech-seed.pdf",   scores:[88,84,79,66,91,58], final:78, verdict:"INVEST"},
+      {name:"b2b-saas-deck.pdf",  scores:[70,65,60,38,72,44], final:58, verdict:"MONITOR"},
+      {name:"healthtech-pre.pdf", scores:[76,68,55,30,82,40], final:55, verdict:"MONITOR"},
+      {name:"marketplace-s1.pdf", scores:[91,85,88,72,86,67], final:83, verdict:"INVEST"},
+    ];
+    var verdictClass = {INVEST:"ht-verdict-invest",MONITOR:"ht-verdict-monitor",PASS:"ht-verdict-pass"};
+    var idx = 0;
+
+    function runDeck(){
+      var d = decks[idx % decks.length]; idx++;
+      document.getElementById("ht-fname").textContent = d.name;
+      document.getElementById("ht-cursor").style.display = "inline-block";
+      document.getElementById("ht-result").classList.remove("show");
+      document.getElementById("ht-final").textContent = "—";
+      document.getElementById("ht-verdict-chip").textContent = "—";
+      document.getElementById("ht-verdict-chip").className = "ht-verdict";
+
+      // reset lines
+      for(var i=0;i<=6;i++){
+        var l = document.getElementById("htl"+i);
+        if(l){l.classList.remove("show");}
+      }
+      for(var j=1;j<=6;j++){
+        document.getElementById("htb"+j).style.width = "0%";
+        document.getElementById("hts"+j).textContent = "—";
+      }
+
+      // animate line 0 (command)
+      setTimeout(function(){
+        document.getElementById("htl0").classList.add("show");
+      }, 300);
+
+      // animate sections
+      var delays = [900,1200,1500,1800,2100,2400];
+      d.scores.forEach(function(score, i){
+        setTimeout((function(score,i){return function(){
+          var line = document.getElementById("htl"+(i+1));
+          var bar  = document.getElementById("htb"+(i+1));
+          var num  = document.getElementById("hts"+(i+1));
+          line.classList.add("show");
+          setTimeout(function(){
+            bar.style.width = score + "%";
+            num.textContent = score;
+          }, 80);
+        };})(score,i), delays[i]);
+      });
+
+      // hide cursor, show result
+      setTimeout(function(){
+        document.getElementById("ht-cursor").style.display = "none";
+        document.getElementById("ht-final").textContent = d.final;
+        var chip = document.getElementById("ht-verdict-chip");
+        chip.textContent = d.verdict;
+        chip.className = "ht-verdict " + (verdictClass[d.verdict]||"");
+        document.getElementById("ht-result").classList.add("show");
+      }, 2900);
+
+      // loop
+      setTimeout(runDeck, 5200);
+    }
+
+    // start after hero reveal
+    setTimeout(runDeck, 800);
+  })();
+  </script>
 </div>
 
 <!-- PROBLEM -->
