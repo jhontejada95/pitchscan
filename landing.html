@@ -12,23 +12,32 @@
 /* ── RESET & ROOT ── */
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
-  --bg:#080c14;
-  --bg2:#0b1120;
-  --surface:rgba(255,255,255,0.03);
-  --border:rgba(255,255,255,0.07);
-  --border-hi:rgba(255,255,255,0.12);
-  --gold:#b8953d;
-  --gold-hi:#d4aa56;
-  --gold-muted:rgba(184,149,61,0.15);
-  --blue:#2058d4;
-  --blue-hi:#2563eb;
-  --text:#f0f4ff;
-  --text-muted:#5a6a82;
-  --text-dim:#2d3a4f;
-  --red:#c0392b;
-  --green:#1a7a5e;
-  --ease-spring:cubic-bezier(0.32,0.72,0,1);
-  --ease-out:cubic-bezier(0.16,1,0.3,1);
+  /* Palette */
+  --navy:   #0C2A38;
+  --green:  #2A6B55;
+  --yellow: #E8BA4A;
+  --aqua:   #7ECFC8;
+  --pink:   #E09590;
+  --mint:   #C8E9DE;
+
+  /* Derived */
+  --bg:  #071520;
+  --bg2: #0c1e2e;
+  --surface: rgba(12,42,56,0.4);
+  --border: rgba(126,207,200,0.1);
+  --border-hi: rgba(126,207,200,0.22);
+  --gold: var(--yellow);
+  --gold-hi: #f0cc6a;
+  --gold-muted: rgba(232,186,74,0.1);
+  --blue: #2A6B55;
+  --blue-hi: var(--aqua);
+  --text: #e8f4f2;
+  --text-muted: #5a7a82;
+  --text-dim: #2a4050;
+  --red: var(--pink);
+  --green: #2A6B55;
+  --ease-spring: cubic-bezier(0.32,0.72,0,1);
+  --ease-out: cubic-bezier(0.16,1,0.3,1);
 }
 html{scroll-behavior:smooth;-webkit-font-smoothing:antialiased;}
 body{
@@ -55,8 +64,8 @@ body::before{
 /* ── BG GRADIENTS ── */
 .bg-orbs{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
 .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.4;}
-.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(32,88,212,0.18) 0%,transparent 70%);top:-200px;left:-150px;}
-.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(184,149,61,0.1) 0%,transparent 70%);bottom:-100px;right:-100px;}
+.orb1{width:600px;height:600px;background:radial-gradient(circle,rgba(42,107,85,0.18) 0%,transparent 70%);top:-200px;left:-150px;}
+.orb2{width:500px;height:500px;background:radial-gradient(circle,rgba(126,207,200,0.12) 0%,transparent 70%);bottom:-100px;right:-100px;}
 
 /* ── NAV ── */
 .nav-wrap{position:fixed;top:1.5rem;left:0;right:0;z-index:80;display:flex;justify-content:center;pointer-events:none;}
@@ -81,14 +90,14 @@ nav:hover{border-color:rgba(255,255,255,0.18);}
 }
 .nav-links a:hover{color:var(--text);}
 .nav-pill{
-  background:var(--text);color:var(--bg);
+  background:var(--yellow);color:var(--bg);
   padding:0.5rem 1.2rem;border-radius:99px;
   font-size:0.82rem;font-weight:700;text-decoration:none;
   display:inline-flex;align-items:center;gap:0.5rem;
   transition:all 0.25s var(--ease-spring);
   white-space:nowrap;
 }
-.nav-pill:hover{background:var(--gold-hi);transform:scale(1.03);}
+.nav-pill:hover{background:#f0cc6a;transform:scale(1.03);}
 .pill-arrow{
   width:22px;height:22px;border-radius:50%;
   background:rgba(0,0,0,0.12);
@@ -122,7 +131,7 @@ h1{
 }
 h1 em{
   font-style:normal;
-  background:linear-gradient(135deg,var(--gold),var(--gold-hi) 60%,#e8c870);
+  background:linear-gradient(135deg,var(--yellow),#f0cc6a 60%,var(--aqua));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
@@ -133,7 +142,7 @@ h1 em{
 }
 .cta-row{display:flex;gap:0.8rem;justify-content:center;flex-wrap:wrap;}
 .btn-primary{
-  background:var(--text);color:var(--bg);
+  background:var(--yellow);color:var(--bg);
   padding:0.85rem 0.85rem 0.85rem 1.8rem;
   border-radius:99px;font-size:0.9rem;font-weight:700;
   text-decoration:none;display:inline-flex;align-items:center;gap:0.6rem;
@@ -172,7 +181,7 @@ h1 em{
 .s{position:relative;z-index:1;padding:clamp(80px,12vw,140px) 1.5rem;max-width:1100px;margin:0 auto;}
 .s-label{
   font-size:0.65rem;font-weight:700;letter-spacing:0.2em;text-transform:uppercase;
-  color:var(--blue-hi);margin-bottom:0.9rem;
+  color:var(--aqua);margin-bottom:0.9rem;
 }
 .s-title{
   font-size:clamp(1.9rem,3.5vw,2.8rem);font-weight:800;
@@ -180,7 +189,7 @@ h1 em{
   margin-bottom:1rem;text-wrap:balance;
 }
 .s-title span{
-  background:linear-gradient(135deg,var(--gold),var(--gold-hi));
+  background:linear-gradient(135deg,var(--yellow),#f0cc6a);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
 .s-sub{font-size:0.95rem;color:var(--text-muted);max-width:52ch;line-height:1.75;}
@@ -205,7 +214,7 @@ h1 em{
 .prob-icon{
   width:36px;height:36px;border-radius:10px;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;font-size:0.9rem;
-  background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.2);
+  background:rgba(224,149,144,0.12);border:1px solid rgba(224,149,144,0.2);
 }
 .prob-title{font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:0.3rem;}
 .prob-desc{font-size:0.8rem;color:var(--text-muted);line-height:1.6;}
@@ -217,8 +226,8 @@ h1 em{
 .c-label{font-size:0.68rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--text-muted);margin-bottom:0.6rem;}
 .c-track{height:8px;background:rgba(255,255,255,0.05);border-radius:99px;overflow:hidden;margin-bottom:0.5rem;}
 .c-fill{height:100%;border-radius:99px;}
-.c-fill-old{background:linear-gradient(90deg,rgba(192,57,43,0.8),rgba(192,57,43,0.4));width:100%;}
-.c-fill-new{background:linear-gradient(90deg,var(--blue-hi),var(--gold-hi));width:6%;animation:grow 1.5s var(--ease-spring) forwards;}
+.c-fill-old{background:linear-gradient(90deg,rgba(224,149,144,0.7),rgba(224,149,144,0.3));width:100%;}
+.c-fill-new{background:linear-gradient(90deg,var(--aqua),var(--yellow));width:6%;animation:grow 1.5s var(--ease-spring) forwards;}
 @keyframes grow{from{width:0}to{width:6%}}
 .c-meta{display:flex;justify-content:space-between;align-items:center;}
 .c-time{font-size:0.78rem;color:var(--text-muted);}
@@ -283,8 +292,8 @@ h1 em{
 .preview-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;}
 .preview-filename{font-size:0.8rem;color:var(--text-muted);font-family:"DM Mono",monospace;}
 .preview-verdict{
-  background:rgba(26,122,94,0.12);color:#2dd4a7;
-  border:1px solid rgba(26,122,94,0.3);
+  background:rgba(42,107,85,0.15);color:var(--aqua);
+  border:1px solid rgba(42,107,85,0.35);
   border-radius:99px;padding:0.3rem 0.9rem;
   font-size:0.72rem;font-weight:700;letter-spacing:0.08em;
 }
@@ -299,7 +308,7 @@ h1 em{
 .pbar-fill{height:100%;border-radius:99px;}
 .pbar-val{min-width:26px;text-align:right;font-size:0.7rem;color:#94a3b8;font-family:"DM Mono",monospace;}
 .preview-flags{margin-top:1.8rem;padding-top:1.8rem;border-top:1px solid var(--border);}
-.flags-label{font-size:0.62rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(192,57,43,0.7);margin-bottom:0.6rem;}
+.flags-label{font-size:0.62rem;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:rgba(224,149,144,0.7);margin-bottom:0.6rem;}
 .flag-item{
   background:rgba(192,57,43,0.05);border-left:2px solid rgba(192,57,43,0.4);
   border-radius:0 6px 6px 0;padding:0.4rem 0.8rem;
@@ -328,7 +337,7 @@ h1 em{
   color:var(--text);margin-bottom:1rem;text-wrap:balance;
 }
 .cta-content h2 span{
-  background:linear-gradient(135deg,var(--gold),var(--gold-hi));
+  background:linear-gradient(135deg,var(--yellow),#f0cc6a);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
 .cta-content p{font-size:0.92rem;color:var(--text-muted);max-width:44ch;margin:0 auto 2.5rem;line-height:1.75;}
@@ -495,17 +504,17 @@ footer{
   </div>
   <div class="bento reveal">
     <div class="bento-card bc1">
-      <div class="feat-icon" style="background:rgba(184,149,61,0.12);">&#127919;</div>
+      <div class="feat-icon" style="background:rgba(232,186,74,0.12);">&#127919;</div>
       <div class="feat-title">VC Score (0&ndash;100)</div>
       <div class="feat-desc">A single number that cuts through the noise. Weighted across 6 dimensions that top investors actually care about. Reserve above 72 for fundable decks &mdash; we&#8217;re not generous.</div>
     </div>
     <div class="bento-card bc2">
-      <div class="feat-icon" style="background:rgba(32,88,212,0.14);">&#128202;</div>
+      <div class="feat-icon" style="background:rgba(126,207,200,0.12);">&#128202;</div>
       <div class="feat-title">Section Breakdown</div>
       <div class="feat-desc">Scored on Problem, Solution, Market, Traction, Team, and Financials with a 2-sentence expert comment on each.</div>
     </div>
     <div class="bento-card bc3">
-      <div class="feat-icon" style="background:rgba(192,57,43,0.12);">&#128681;</div>
+      <div class="feat-icon" style="background:rgba(224,149,144,0.12);">&#128681;</div>
       <div class="feat-title">Red Flags</div>
       <div class="feat-desc">Specific issues that would make a VC pass &mdash; found in your actual deck, not generic advice.</div>
     </div>
@@ -539,12 +548,12 @@ footer{
           <div class="ps-label">VC Score</div>
         </div>
         <div>
-          <div class="pbar-row"><span class="pbar-name">Problem</span><div class="pbar-track"><div class="pbar-fill" style="width:88%;background:#10b981;"></div></div><span class="pbar-val">88</span></div>
-          <div class="pbar-row"><span class="pbar-name">Solution</span><div class="pbar-track"><div class="pbar-fill" style="width:82%;background:#10b981;"></div></div><span class="pbar-val">82</span></div>
-          <div class="pbar-row"><span class="pbar-name">Market</span><div class="pbar-track"><div class="pbar-fill" style="width:74%;background:#10b981;"></div></div><span class="pbar-val">74</span></div>
-          <div class="pbar-row"><span class="pbar-name">Traction</span><div class="pbar-track"><div class="pbar-fill" style="width:58%;background:#f59e0b;"></div></div><span class="pbar-val">58</span></div>
-          <div class="pbar-row"><span class="pbar-name">Team</span><div class="pbar-track"><div class="pbar-fill" style="width:76%;background:#10b981;"></div></div><span class="pbar-val">76</span></div>
-          <div class="pbar-row"><span class="pbar-name">Financials</span><div class="pbar-track"><div class="pbar-fill" style="width:52%;background:#f59e0b;"></div></div><span class="pbar-val">52</span></div>
+          <div class="pbar-row"><span class="pbar-name">Problem</span><div class="pbar-track"><div class="pbar-fill" style="width:88%;background:var(--aqua);"></div></div><span class="pbar-val">88</span></div>
+          <div class="pbar-row"><span class="pbar-name">Solution</span><div class="pbar-track"><div class="pbar-fill" style="width:82%;background:var(--aqua);"></div></div><span class="pbar-val">82</span></div>
+          <div class="pbar-row"><span class="pbar-name">Market</span><div class="pbar-track"><div class="pbar-fill" style="width:74%;background:var(--green);"></div></div><span class="pbar-val">74</span></div>
+          <div class="pbar-row"><span class="pbar-name">Traction</span><div class="pbar-track"><div class="pbar-fill" style="width:58%;background:var(--yellow);"></div></div><span class="pbar-val">58</span></div>
+          <div class="pbar-row"><span class="pbar-name">Team</span><div class="pbar-track"><div class="pbar-fill" style="width:76%;background:var(--green);"></div></div><span class="pbar-val">76</span></div>
+          <div class="pbar-row"><span class="pbar-name">Financials</span><div class="pbar-track"><div class="pbar-fill" style="width:52%;background:var(--yellow);"></div></div><span class="pbar-val">52</span></div>
         </div>
       </div>
       <div class="preview-flags">
