@@ -578,7 +578,7 @@ def main():
   ai.src='https://cdn.novus.pendo.io/agent/static/{NOVUS_APP_ID}/novus.js';
   o.head.appendChild(ai);
 }})(window,document,'novus','novus','novus');
-</script>""", height=0, scrolling=False)
+</script>""", height=1, scrolling=False)
 
     st.markdown(CSS, unsafe_allow_html=True)
 
