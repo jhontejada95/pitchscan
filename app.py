@@ -402,7 +402,11 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
 
 
 def analyze_pitch(pdf_text: str, api_key: str, context: dict | None = None) -> dict:
-    client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
+    import streamlit as _st
+    _prov_cfg = _st.session_state.get("_provider", {})
+    _base_url = _prov_cfg.get("base_url", "https://api.deepseek.com")
+    _model    = _prov_cfg.get("model", "deepseek-chat")
+    client = OpenAI(api_key=api_key, base_url=_base_url)
     system_prompt = (
         "You are a senior partner at a top-tier VC firm (a16z, Sequoia, YC). "
         "Evaluate startup pitch decks with sharp, candid judgment. "
@@ -423,7 +427,7 @@ def analyze_pitch(pdf_text: str, api_key: str, context: dict | None = None) -> d
     )
     user_msg = f"PITCH DECK:\n\n{pdf_text[:12000]}\n\nReturn the JSON analysis."
     resp = client.chat.completions.create(
-        model="deepseek-chat",
+        model=_model,
         messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_msg}],
         temperature=0.3, max_tokens=2000,
     )
@@ -744,17 +748,60 @@ pendo.initialize({ visitor: { id: '' } });
     except Exception:
         pass
 
+    # Provider config map
+    _PROVIDERS = {
+        "DeepSeek": {
+            "base_url": "https://api.deepseek.com",
+            "model": "deepseek-chat",
+            "placeholder": "sk-...",
+            "link": "https://platform.deepseek.com",
+            "link_label": "Get free DeepSeek key →",
+            "note": "~$0.004 per analysis",
+        },
+        "OpenAI (GPT-4o)": {
+            "base_url": "https://api.openai.com/v1",
+            "model": "gpt-4o",
+            "placeholder": "sk-...",
+            "link": "https://platform.openai.com/api-keys",
+            "link_label": "Get OpenAI key →",
+            "note": "~$0.03 per analysis",
+        },
+        "Groq (free tier)": {
+            "base_url": "https://api.groq.com/openai/v1",
+            "model": "llama-3.3-70b-versatile",
+            "placeholder": "gsk_...",
+            "link": "https://console.groq.com/keys",
+            "link_label": "Get free Groq key →",
+            "note": "Free tier available",
+        },
+    }
+
     with st.sidebar:
+        st.markdown("### AI Provider")
+        _provider_name = st.selectbox(
+            "Choose provider",
+            list(_PROVIDERS.keys()),
+            label_visibility="collapsed",
+        )
+        _prov = _PROVIDERS[_provider_name]
+
         st.markdown("### API Key")
-        _user_key = st.text_input("Your DeepSeek API key (optional)", type="password", placeholder="sk-...")
+        _user_key = st.text_input(
+            f"{_provider_name} API key",
+            type="password",
+            placeholder=_prov["placeholder"],
+            label_visibility="collapsed",
+        )
         if _user_key:
             api_key = _user_key
-        if _has_builtin and not _user_key:
+            st.success("🔒 Your key is used only for this analysis and is never stored.")
+        elif _has_builtin and _provider_name == "DeepSeek":
             _rem = daily_remaining()
             st.caption(f"Using shared key · **{_rem} free analyses left today**")
-            st.caption("[Get your own free key →](https://platform.deepseek.com)")
-        else:
-            st.caption("Used only in this session.")
+        st.caption(f"[{_prov['link_label']}]({_prov['link']}) · {_prov['note']}")
+
+        # Store provider config in session for use in analyze_pitch
+        st.session_state["_provider"] = _prov
 
     # Hero with counter
     _deck_count = get_deck_count()
