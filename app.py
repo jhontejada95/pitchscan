@@ -3,9 +3,47 @@ import json
 import re
 import io
 import random
+import time
+import threading
+import urllib.request
 from openai import OpenAI
 
 NOVUS_APP_ID = "26e1d6da-25ad-4964-981b-411e2faef7b0"
+
+_PENDO_TRACK_URL = "https://data.pendo.io/data/track"
+_PENDO_INTEGRATION_KEY = "97fb48e2-7fb9-44f2-a05a-87b6c6f35d1f"
+
+
+def _pendo_track(event_name, properties=None):
+    try:
+        payload = json.dumps({
+            "type": "track",
+            "event": event_name,
+            "visitorId": "system",
+            "accountId": "system",
+            "timestamp": int(time.time() * 1000),
+            "properties": properties or {},
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            _PENDO_TRACK_URL,
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "x-pendo-integration-key": _PENDO_INTEGRATION_KEY,
+            },
+            method="POST",
+        )
+
+        def _send():
+            try:
+                urllib.request.urlopen(req, timeout=5)
+            except Exception:
+                pass
+
+        threading.Thread(target=_send, daemon=True).start()
+    except Exception:
+        pass
+
 
 VC_TIPS = [
     ("Paul Graham (YC)", "The best decks tell a story, not a business plan. Lead with a specific customer who has a painful problem."),
@@ -279,6 +317,7 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
                 text_parts.append(t)
     native_text = "\n\n".join(text_parts).strip()
     if len(native_text) >= 150:
+        st.session_state["_pdf_extraction_method"] = "native"
         return native_text
     # OCR fallback
     try:
@@ -292,14 +331,17 @@ def extract_text_from_pdf(file_bytes: bytes) -> str:
             if text.strip():
                 ocr_parts.append(text.strip())
         ocr_text = "\n\n".join(ocr_parts).strip()
+        st.session_state["_pdf_extraction_method"] = "ocr"
         return ocr_text if ocr_text else native_text
     except ImportError as e:
         st.error(f"OCR library missing: {e}")
+        st.session_state["_pdf_extraction_method"] = "native"
         return native_text
     except Exception as e:
         import traceback
         st.error(f"OCR error: {type(e).__name__}: {e}")
         st.code(traceback.format_exc())
+        st.session_state["_pdf_extraction_method"] = "native"
         return native_text
 
 
@@ -529,28 +571,46 @@ def render_results(result: dict, filename: str):
     base_name = filename.replace(".pdf", "")
     dcol1, dcol2, dcol3, _ = st.columns([1, 1, 1, 2])
     with dcol1:
-        st.download_button(
+        if st.download_button(
             "JSON",
             data=json.dumps(result, indent=2),
             file_name=f"pitchscan_{base_name}.json",
             mime="application/json",
-        )
+        ):
+            _pendo_track("report_exported", {
+                "file_name": filename,
+                "export_format": "json",
+                "overall_score": result.get("overall_score"),
+                "verdict": result.get("verdict"),
+            })
     with dcol2:
-        st.download_button(
+        if st.download_button(
             "Markdown",
             data=build_markdown_report(result, filename),
             file_name=f"pitchscan_{base_name}.md",
             mime="text/markdown",
-        )
+        ):
+            _pendo_track("report_exported", {
+                "file_name": filename,
+                "export_format": "markdown",
+                "overall_score": result.get("overall_score"),
+                "verdict": result.get("verdict"),
+            })
     with dcol3:
         try:
             docx_bytes = build_docx_report(result, filename)
-            st.download_button(
+            if st.download_button(
                 "Word (DOCX)",
                 data=docx_bytes,
                 file_name=f"pitchscan_{base_name}.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            )
+            ):
+                _pendo_track("report_exported", {
+                    "file_name": filename,
+                    "export_format": "docx",
+                    "overall_score": result.get("overall_score"),
+                    "verdict": result.get("verdict"),
+                })
         except Exception:
             pass
 
@@ -584,8 +644,10 @@ def main():
 
     # Sidebar: API key
     api_key = None
+    key_source = None
     try:
         api_key = st.secrets["DEEPSEEK_API_KEY"]
+        key_source = "secrets"
     except Exception:
         pass
     if not api_key:
@@ -593,6 +655,13 @@ def main():
             st.markdown("### API Key")
             api_key = st.text_input("DeepSeek API Key", type="password", placeholder="sk-...")
             st.caption("Used only in this session.")
+        if api_key:
+            key_source = "manual"
+    if api_key and not st.session_state.get("_api_key_tracked"):
+        _pendo_track("api_key_configured", {
+            "key_source": key_source,
+        })
+        st.session_state["_api_key_tracked"] = True
 
     # Hero
     st.markdown(
@@ -644,6 +713,14 @@ def main():
     cache_key = uploaded_file.name + str(uploaded_file.size)
 
     if "result" not in st.session_state or st.session_state.get("last_file") != cache_key:
+        if st.session_state.get("_last_tracked_upload") != cache_key:
+            _pendo_track("deck_uploaded", {
+                "file_name": uploaded_file.name,
+                "file_size_bytes": uploaded_file.size,
+                "file_type": uploaded_file.type or "application/pdf",
+            })
+            st.session_state["_last_tracked_upload"] = cache_key
+
         render_loading_tips()
 
         with st.spinner("Reading pitch deck..."):
@@ -651,22 +728,71 @@ def main():
                 pdf_bytes = uploaded_file.read()
                 pitch_text = extract_text_from_pdf(pdf_bytes)
             except Exception as e:
+                _pendo_track("pdf_extraction_failed", {
+                    "file_name": uploaded_file.name,
+                    "file_size_bytes": uploaded_file.size,
+                    "error_type": type(e).__name__,
+                    "error_message": str(e)[:200],
+                })
                 st.error(f"Could not read PDF: {e}")
                 return
 
         if not pitch_text.strip():
+            _pendo_track("pdf_extraction_failed", {
+                "file_name": uploaded_file.name,
+                "file_size_bytes": uploaded_file.size,
+                "error_type": "empty_extraction",
+                "error_message": "No text extracted",
+            })
             st.error("Could not extract any text from this PDF. Try a different file.")
             return
+
+        extraction_method = st.session_state.get("_pdf_extraction_method", "unknown")
+        _pendo_track("pdf_text_extracted", {
+            "file_name": uploaded_file.name,
+            "file_size_bytes": uploaded_file.size,
+            "extraction_method": extraction_method,
+            "extracted_text_length": len(pitch_text),
+            "used_ocr_fallback": extraction_method == "ocr",
+        })
 
         with st.spinner("Analyzing with DeepSeek — this takes a few minutes..."):
             try:
                 result = analyze_pitch(pitch_text, api_key)
                 st.session_state["result"] = result
                 st.session_state["last_file"] = cache_key
+                sections = result.get("sections", {})
+                _pendo_track("pitch_analysis_completed", {
+                    "file_name": uploaded_file.name,
+                    "overall_score": result.get("overall_score"),
+                    "verdict": result.get("verdict"),
+                    "problem_score": sections.get("problem", {}).get("score"),
+                    "solution_score": sections.get("solution", {}).get("score"),
+                    "market_score": sections.get("market", {}).get("score"),
+                    "traction_score": sections.get("traction", {}).get("score"),
+                    "team_score": sections.get("team", {}).get("score"),
+                    "financials_score": sections.get("financials", {}).get("score"),
+                    "red_flags_count": len(result.get("red_flags", [])),
+                    "suggestions_count": len(result.get("suggestions", [])),
+                    "comparables_count": len(result.get("comparables", [])),
+                    "extracted_text_length": len(pitch_text),
+                })
             except json.JSONDecodeError as e:
+                _pendo_track("pitch_analysis_failed", {
+                    "file_name": uploaded_file.name,
+                    "error_type": "JSONDecodeError",
+                    "error_message": str(e)[:200],
+                    "extracted_text_length": len(pitch_text),
+                })
                 st.error(f"Model returned invalid JSON. Please try again.")
                 return
             except Exception as e:
+                _pendo_track("pitch_analysis_failed", {
+                    "file_name": uploaded_file.name,
+                    "error_type": type(e).__name__,
+                    "error_message": str(e)[:200],
+                    "extracted_text_length": len(pitch_text),
+                })
                 st.error(f"Analysis failed: {e}")
                 return
         st.rerun()
